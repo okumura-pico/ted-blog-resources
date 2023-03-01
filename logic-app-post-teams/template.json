@@ -1,0 +1,217 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "defaultValue": "[resourceGroup().location]",
+      "type": "string"
+    },
+    "workflows_name": {
+      "type": "String"
+    },
+    "teams_webhook_url": {
+      "type": "string"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2017-07-01",
+      "name": "[parameters('workflows_name')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {},
+          "triggers": {
+            "manual": {
+              "type": "Request",
+              "kind": "Http",
+              "inputs": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "properties": {
+                        "alertContext": {
+                          "properties": {},
+                          "type": "object"
+                        },
+                        "essentials": {
+                          "properties": {
+                            "alertContextVersion": {
+                              "type": "string"
+                            },
+                            "alertId": {
+                              "type": "string"
+                            },
+                            "alertRule": {
+                              "type": "string"
+                            },
+                            "alertTargetIDs": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "essentialsVersion": {
+                              "type": "string"
+                            },
+                            "firedDateTime": {
+                              "type": "string"
+                            },
+                            "monitorCondition": {
+                              "type": "string"
+                            },
+                            "monitoringService": {
+                              "type": "string"
+                            },
+                            "originAlertId": {
+                              "type": "string"
+                            },
+                            "resolvedDateTime": {
+                              "type": "string"
+                            },
+                            "severity": {
+                              "type": "string"
+                            },
+                            "signalType": {
+                              "type": "string"
+                            }
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "schemaId": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "actions": {
+            "HTTP": {
+              "runAfter": {
+                "Initialize_variable": ["Succeeded"]
+              },
+              "type": "Http",
+              "inputs": {
+                "body": "@variables('message')",
+                "headers": {
+                  "Contentn-Type": "application/json"
+                },
+                "method": "POST",
+                "uri": "[parameters('teams_webhook_url')]"
+              }
+            },
+            "Initialize_variable": {
+              "runAfter": {},
+              "type": "InitializeVariable",
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "message",
+                    "type": "object",
+                    "value": {
+                      "attachments": [
+                        {
+                          "content": {
+                            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                            "body": [
+                              {
+                                "items": [
+                                  {
+                                    "columns": [
+                                      {
+                                        "items": [
+                                          {
+                                            "height": "48px",
+                                            "size": "Small",
+                                            "type": "Image",
+                                            "url": "@if(equals(triggerBody()?['data']?['essentials']?['monitorCondition'], 'Fired'), 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwAgMAAAAqbBEUAAAACVBMVEUAAADtGyT///8RZ1l0AAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAADrSURBVCjPbZLBscMgDETJwSW4n5Tgg+FACfRDCTpIVf5dLTjzM5GZgQfSIguVAnvV+i7bKmyvT8L9HHTbR0etEbVey6tFzOUHr4jlB93uw6SOkGHdFQThmC0kjjsiR03gNuRqxjcfPiYVDop1o9yVYPwWDEJqQ3nMbs2pndcAQoAZEZkqlQnUZs4CE9gahCFwwSQ0AXTazGyLstd/lNxiNBxKRg5PnZK7BMzl/AByYx6E5l9wEOja/BLQBCbogBeqLjMU+wOoaNswWfihtd96Etmlx5K9dxc8nXBqfe+n3yGP3692+ddIT4v9ATD6vzIOhUtzAAAAAElFTkSuQmCC', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwAgMAAAAqbBEUAAAACVBMVEUAAAAWnGP///9rN7yoAAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAC8SURBVCjPbZK7AcMgDESh8AjswwguLAr3abyPU6SngCmjL4jEqnjAnUBSCBgRIAcLwLB1IjjcgR1tAvu8ZfcA5r1okKdERCp5sUj3G4tkXfoNQ38iZNNfnRwUevNQCdLQo3dSPfyBmjV+qkJ1QPpHKB2eoKBzM7huB/gsceaTCYmyizO97fSAvl1ruiFoGv5pfzcHH4NIlWlWbIJqbaA/D0gGB7ekSM6dm6WQf9u4Nnhp/TIU67gsgzRG7AtXu6hiZQLH/gAAAABJRU5ErkJggg==')",
+                                            "width": "48px"
+                                          }
+                                        ],
+                                        "padding": "None",
+                                        "type": "Column",
+                                        "width": "auto"
+                                      },
+                                      {
+                                        "items": [
+                                          {
+                                            "facts": [
+                                              {
+                                                "title": "@if(equals(triggerBody()?['data']?['essentials']?['monitorCondition'],'Fired'), '発生日時', '解決日時')",
+                                                "value": "@if(equals(triggerBody()?['data']?['essentials']?['monitorCondition'],'Fired'), triggerBody()?['data']?['essentials']?['firedDateTime'], triggerBody()?['data']?['essentials']?['resolvedDateTime'])"
+                                              },
+                                              {
+                                                "title": "アラートルール",
+                                                "value": "@triggerBody()?['data']?['essentials']?['alertRule']"
+                                              },
+                                              {
+                                                "title": "重大度",
+                                                "value": "@triggerBody()?['data']?['essentials']?['severity']"
+                                              },
+                                              {
+                                                "title": "シグナル種別",
+                                                "value": "@triggerBody()?['data']?['essentials']?['signalType']"
+                                              }
+                                            ],
+                                            "type": "FactSet"
+                                          }
+                                        ],
+                                        "padding": "None",
+                                        "type": "Column",
+                                        "width": "auto"
+                                      }
+                                    ],
+                                    "padding": "None",
+                                    "type": "ColumnSet"
+                                  }
+                                ],
+                                "padding": "None",
+                                "type": "Container"
+                              },
+                              {
+                                "items": [
+                                  {
+                                    "text": "@concat('- ', join(coalesce(triggerBody()?['data']?['essentials']?['alertTargetIDs'], array(null)), '\\n- '))",
+                                    "type": "TextBlock",
+                                    "wrap": true
+                                  }
+                                ],
+                                "padding": "None",
+                                "type": "Container"
+                              }
+                            ],
+                            "padding": "None",
+                            "type": "AdaptiveCard",
+                            "version": "1.0"
+                          },
+                          "contentType": "application/vnd.microsoft.card.adaptive",
+                          "contentUrl": null
+                        }
+                      ],
+                      "type": "message"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "outputs": {}
+        },
+        "parameters": {}
+      }
+    }
+  ]
+}
