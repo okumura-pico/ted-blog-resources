@@ -1,3 +1,4 @@
 # 東京エレクトロンデバイス テックブログ リソース
 
-- [Azure Alert を Teams へポストする Logic App](./logic-app-post-teams/README.md)
+- [Azure Alert を Teams へポストする Logic App](./logic-app-post-teams/)
+- [Azure Alert を Teams へポストする Azure Function App](./functions-post-teams/)

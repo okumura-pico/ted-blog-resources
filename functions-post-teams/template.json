@@ -1,0 +1,170 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.15.31.15270",
+      "templateHash": "7555411676570994808"
+    }
+  },
+  "parameters": {
+    "functionAppName": {
+      "type": "string",
+      "defaultValue": "[format('func-{0}', uniqueString(resourceGroup().name))]",
+      "metadata": {
+        "description": "The name of the Azure Function app."
+      }
+    },
+    "storageAccountType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS"
+      ],
+      "metadata": {
+        "description": "Storage Account type"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "linuxFxVersion": {
+      "type": "string",
+      "defaultValue": "node|18",
+      "metadata": {
+        "description": "Required for Linux app to represent runtime stack in the format of 'runtime|runtimeVersion'. For example: 'node|18'"
+      }
+    },
+    "packageUri": {
+      "type": "string",
+      "defaultValue": "https://github.com/okumura-pico/azure-alert-to-teams-func/releases/download/latest/release.zip",
+      "metadata": {
+        "description": "The zip content url."
+      }
+    },
+    "AZURE_API_VERSION": {
+      "type": "string",
+      "defaultValue": "2022-03-01",
+      "metadata": {
+        "description": "Function App内で使用しているAzure APIのバージョン"
+      }
+    },
+    "AZURE_CLIENT_ID": {
+      "type": "string",
+      "metadata": {
+        "description": "Azureリソース取得に使用するアプリケーションのクライアントID"
+      }
+    },
+    "AZURE_CLIENT_SECRET": {
+      "type": "securestring",
+      "metadata": {
+        "description": "アプリケーションのシークレット"
+      }
+    },
+    "AZURE_TENANT_ID": {
+      "type": "string",
+      "metadata": {
+        "description": "アプリケーションが存在するテナントID"
+      }
+    }
+  },
+  "variables": {
+    "functionWorkerRuntime": "node",
+    "hostingPlanName": "[parameters('functionAppName')]",
+    "storageAccountName": "[format('func{0}stg', uniqueString(resourceGroup().name))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2022-05-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('storageAccountType')]"
+      },
+      "kind": "Storage"
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-03-01",
+      "name": "[variables('hostingPlanName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Y1",
+        "tier": "Dynamic",
+        "size": "Y1",
+        "family": "Y"
+      },
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-03-01",
+      "name": "[parameters('functionAppName')]",
+      "location": "[parameters('location')]",
+      "kind": "functionapp,linux",
+      "properties": {
+        "reserved": true,
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+        "siteConfig": {
+          "linuxFxVersion": "[parameters('linuxFxVersion')]",
+          "appSettings": [
+            {
+              "name": "[parameters('AZURE_API_VERSION')]",
+              "value": "[parameters('AZURE_API_VERSION')]"
+            },
+            {
+              "name": "[parameters('AZURE_CLIENT_ID')]",
+              "value": "[parameters('AZURE_CLIENT_ID')]"
+            },
+            {
+              "name": "[parameters('AZURE_CLIENT_SECRET')]",
+              "value": "[parameters('AZURE_CLIENT_SECRET')]"
+            },
+            {
+              "name": "[parameters('AZURE_TENANT_ID')]",
+              "value": "[parameters('AZURE_TENANT_ID')]"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', variables('storageAccountName'), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2022-05-01').keys[0].value)]"
+            },
+            {
+              "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', variables('storageAccountName'), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2022-05-01').keys[0].value)]"
+            },
+            {
+              "name": "WEBSITE_CONTENTSHARE",
+              "value": "[toLower(parameters('functionAppName'))]"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~4"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "[variables('functionWorkerRuntime')]"
+            },
+            {
+              "name": "WEBSITE_RUN_FROM_PACKAGE",
+              "value": "[parameters('packageUri')]"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    }
+  ]
+}
