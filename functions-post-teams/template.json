@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.15.31.15270",
-      "templateHash": "7555411676570994808"
+      "templateHash": "13765551363791657124"
     }
   },
   "parameters": {
@@ -47,6 +47,12 @@
       "defaultValue": "https://github.com/okumura-pico/azure-alert-to-teams-func/releases/download/latest/release.zip",
       "metadata": {
         "description": "The zip content url."
+      }
+    },
+    "TEAMS_WEBHOOK_URL": {
+      "type": "string",
+      "metadata": {
+        "description": "Teamsに設定したWebHookコネクタのURL"
       }
     },
     "AZURE_API_VERSION": {
@@ -119,19 +125,23 @@
           "linuxFxVersion": "[parameters('linuxFxVersion')]",
           "appSettings": [
             {
-              "name": "[parameters('AZURE_API_VERSION')]",
+              "name": "TEAMS_WEBHOOK_URL",
+              "value": "[parameters('TEAMS_WEBHOOK_URL')]"
+            },
+            {
+              "name": "AZURE_API_VERSION",
               "value": "[parameters('AZURE_API_VERSION')]"
             },
             {
-              "name": "[parameters('AZURE_CLIENT_ID')]",
+              "name": "AZURE_CLIENT_ID",
               "value": "[parameters('AZURE_CLIENT_ID')]"
             },
             {
-              "name": "[parameters('AZURE_CLIENT_SECRET')]",
+              "name": "AZURE_CLIENT_SECRET",
               "value": "[parameters('AZURE_CLIENT_SECRET')]"
             },
             {
-              "name": "[parameters('AZURE_TENANT_ID')]",
+              "name": "AZURE_TENANT_ID",
               "value": "[parameters('AZURE_TENANT_ID')]"
             },
             {

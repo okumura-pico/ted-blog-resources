@@ -18,6 +18,9 @@ param linuxFxVersion string = 'node|18'
 @description('The zip content url.')
 param packageUri string = 'https://github.com/okumura-pico/azure-alert-to-teams-func/releases/download/latest/release.zip'
 
+@description('Teamsに設定したWebHookコネクタのURL')
+param TEAMS_WEBHOOK_URL string
+
 @description('Function App内で使用しているAzure APIのバージョン')
 param AZURE_API_VERSION string = '2022-03-01'
 
@@ -69,18 +72,22 @@ resource functionApp 'Microsoft.Web/sites@2022-03-01' = {
       linuxFxVersion: linuxFxVersion
       appSettings: [
         {
-          name: AZURE_API_VERSION
+          name: 'TEAMS_WEBHOOK_URL'
+          value: TEAMS_WEBHOOK_URL
+        }
+        {
+          name: 'AZURE_API_VERSION'
           value: AZURE_API_VERSION
         }
-        { name: AZURE_CLIENT_ID
+        { name: 'AZURE_CLIENT_ID'
           value: AZURE_CLIENT_ID
         }
         {
-          name: AZURE_CLIENT_SECRET
+          name: 'AZURE_CLIENT_SECRET'
           value: AZURE_CLIENT_SECRET
         }
         {
-          name: AZURE_TENANT_ID
+          name: 'AZURE_TENANT_ID'
           value: AZURE_TENANT_ID
         }
         {
