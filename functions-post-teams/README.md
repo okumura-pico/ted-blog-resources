@@ -21,7 +21,6 @@ Azure Function App をデプロイする
 | location            | デプロイ先リージョン                                          |
 | functionAppName     | Azure Funcion App の名前                                      |
 | TEAMS_WEBHOOK_URL   | Teams に設定した WebHook コネクタの URL                       |
-| AZURE_API_VERSION   | Function App 内で使用している Azure API のバージョン          |
 | AZURE_CLIENT_ID     | Azure リソース取得に使用するアプリケーションのクライアント ID |
 | AZURE_CLIENT_SECRET | アプリケーションのシークレット                                |
 | AZURE_TENANT_ID     | アプリケーションが存在するテナント ID                         |
