@@ -1,6 +1,12 @@
 @description('The name of the Azure Function app.')
 param functionAppName string = 'func-${uniqueString(resourceGroup().name)}'
 
+@description('The name of App Service Plan.')
+param hostingPlanName string = 'func-${uniqueString(resourceGroup().name)}'
+
+@description('The name of Storage Account.')
+param storageAccountName string = 'func${uniqueString(resourceGroup().name)}stg'
+
 @description('Storage Account type')
 @allowed([
   'Standard_LRS'
@@ -12,17 +18,11 @@ param storageAccountType string = 'Standard_LRS'
 @description('Location for all resources.')
 param location string = resourceGroup().location
 
-@description('Required for Linux app to represent runtime stack in the format of \'runtime|runtimeVersion\'. For example: \'node|18\'')
-param linuxFxVersion string = 'node|18'
-
 @description('The zip content url.')
 param packageUri string = 'https://github.com/okumura-pico/azure-alert-to-teams-func/releases/download/latest/release.zip'
 
 @description('Teamsに設定したWebHookコネクタのURL')
 param TEAMS_WEBHOOK_URL string
-
-@description('Function App内で使用しているAzure APIのバージョン')
-param AZURE_API_VERSION string = '2022-03-01'
 
 @description('Azureリソース取得に使用するアプリケーションのクライアントID')
 param AZURE_CLIENT_ID string
@@ -35,10 +35,9 @@ param AZURE_CLIENT_SECRET string
 param AZURE_TENANT_ID string
 
 var functionWorkerRuntime = 'node'
-var hostingPlanName = functionAppName
-var storageAccountName = 'func${uniqueString(resourceGroup().name)}stg'
+var linuxFxVersion = 'node|18'
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: storageAccountName
   location: location
   sku: {
@@ -74,10 +73,6 @@ resource functionApp 'Microsoft.Web/sites@2022-03-01' = {
         {
           name: 'TEAMS_WEBHOOK_URL'
           value: TEAMS_WEBHOOK_URL
-        }
-        {
-          name: 'AZURE_API_VERSION'
-          value: AZURE_API_VERSION
         }
         { name: 'AZURE_CLIENT_ID'
           value: AZURE_CLIENT_ID

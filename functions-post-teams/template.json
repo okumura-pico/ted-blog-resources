@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.15.31.15270",
-      "templateHash": "13765551363791657124"
+      "templateHash": "13391709892836286544"
     }
   },
   "parameters": {
@@ -14,6 +14,20 @@
       "defaultValue": "[format('func-{0}', uniqueString(resourceGroup().name))]",
       "metadata": {
         "description": "The name of the Azure Function app."
+      }
+    },
+    "hostingPlanName": {
+      "type": "string",
+      "defaultValue": "[format('func-{0}', uniqueString(resourceGroup().name))]",
+      "metadata": {
+        "description": "The name of App Service Plan."
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "[format('func{0}stg', uniqueString(resourceGroup().name))]",
+      "metadata": {
+        "description": "The name of Storage Account."
       }
     },
     "storageAccountType": {
@@ -35,13 +49,6 @@
         "description": "Location for all resources."
       }
     },
-    "linuxFxVersion": {
-      "type": "string",
-      "defaultValue": "node|18",
-      "metadata": {
-        "description": "Required for Linux app to represent runtime stack in the format of 'runtime|runtimeVersion'. For example: 'node|18'"
-      }
-    },
     "packageUri": {
       "type": "string",
       "defaultValue": "https://github.com/okumura-pico/azure-alert-to-teams-func/releases/download/latest/release.zip",
@@ -53,13 +60,6 @@
       "type": "string",
       "metadata": {
         "description": "Teamsに設定したWebHookコネクタのURL"
-      }
-    },
-    "AZURE_API_VERSION": {
-      "type": "string",
-      "defaultValue": "2022-03-01",
-      "metadata": {
-        "description": "Function App内で使用しているAzure APIのバージョン"
       }
     },
     "AZURE_CLIENT_ID": {
@@ -83,14 +83,13 @@
   },
   "variables": {
     "functionWorkerRuntime": "node",
-    "hostingPlanName": "[parameters('functionAppName')]",
-    "storageAccountName": "[format('func{0}stg', uniqueString(resourceGroup().name))]"
+    "linuxFxVersion": "node|18"
   },
   "resources": [
     {
       "type": "Microsoft.Storage/storageAccounts",
-      "apiVersion": "2022-05-01",
-      "name": "[variables('storageAccountName')]",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('storageAccountName')]",
       "location": "[parameters('location')]",
       "sku": {
         "name": "[parameters('storageAccountType')]"
@@ -100,7 +99,7 @@
     {
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2022-03-01",
-      "name": "[variables('hostingPlanName')]",
+      "name": "[parameters('hostingPlanName')]",
       "location": "[parameters('location')]",
       "sku": {
         "name": "Y1",
@@ -120,17 +119,13 @@
       "kind": "functionapp,linux",
       "properties": {
         "reserved": true,
-        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
         "siteConfig": {
-          "linuxFxVersion": "[parameters('linuxFxVersion')]",
+          "linuxFxVersion": "[variables('linuxFxVersion')]",
           "appSettings": [
             {
               "name": "TEAMS_WEBHOOK_URL",
               "value": "[parameters('TEAMS_WEBHOOK_URL')]"
-            },
-            {
-              "name": "AZURE_API_VERSION",
-              "value": "[parameters('AZURE_API_VERSION')]"
             },
             {
               "name": "AZURE_CLIENT_ID",
@@ -146,11 +141,11 @@
             },
             {
               "name": "AzureWebJobsStorage",
-              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', variables('storageAccountName'), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2022-05-01').keys[0].value)]"
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', parameters('storageAccountName'), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2022-09-01').keys[0].value)]"
             },
             {
               "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
-              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', variables('storageAccountName'), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2022-05-01').keys[0].value)]"
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', parameters('storageAccountName'), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2022-09-01').keys[0].value)]"
             },
             {
               "name": "WEBSITE_CONTENTSHARE",
@@ -172,8 +167,8 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+        "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
       ]
     }
   ]
