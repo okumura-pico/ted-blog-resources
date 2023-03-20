@@ -5,27 +5,27 @@
     "_generator": {
       "name": "bicep",
       "version": "0.15.31.15270",
-      "templateHash": "13391709892836286544"
+      "templateHash": "13289400106944518654"
     }
   },
   "parameters": {
     "functionAppName": {
       "type": "string",
-      "defaultValue": "[format('func-{0}', uniqueString(resourceGroup().name))]",
+      "defaultValue": "[format('alert2teams-{0}', uniqueString(resourceGroup().name))]",
       "metadata": {
         "description": "The name of the Azure Function app."
       }
     },
     "hostingPlanName": {
       "type": "string",
-      "defaultValue": "[format('func-{0}', uniqueString(resourceGroup().name))]",
+      "defaultValue": "[format('alert2teams-{0}', uniqueString(resourceGroup().name))]",
       "metadata": {
         "description": "The name of App Service Plan."
       }
     },
     "storageAccountName": {
       "type": "string",
-      "defaultValue": "[format('func{0}stg', uniqueString(resourceGroup().name))]",
+      "defaultValue": "[format('alert2teams{0}stg', uniqueString(resourceGroup().name))]",
       "metadata": {
         "description": "The name of Storage Account."
       }

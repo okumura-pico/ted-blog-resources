@@ -1,11 +1,11 @@
 @description('The name of the Azure Function app.')
-param functionAppName string = 'func-${uniqueString(resourceGroup().name)}'
+param functionAppName string = 'alert2teams-${uniqueString(resourceGroup().name)}'
 
 @description('The name of App Service Plan.')
-param hostingPlanName string = 'func-${uniqueString(resourceGroup().name)}'
+param hostingPlanName string = 'alert2teams-${uniqueString(resourceGroup().name)}'
 
 @description('The name of Storage Account.')
-param storageAccountName string = 'func${uniqueString(resourceGroup().name)}stg'
+param storageAccountName string = 'alert2teams${uniqueString(resourceGroup().name)}stg'
 
 @description('Storage Account type')
 @allowed([
