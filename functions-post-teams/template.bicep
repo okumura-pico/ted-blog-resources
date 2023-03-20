@@ -5,7 +5,7 @@ param functionAppName string = 'alert2teams-${uniqueString(resourceGroup().name)
 param hostingPlanName string = 'alert2teams-${uniqueString(resourceGroup().name)}'
 
 @description('The name of Storage Account.')
-param storageAccountName string = 'alert2teams${uniqueString(resourceGroup().name)}stg'
+param storageAccountName string = take('alert2teams${uniqueString(resourceGroup().name)}stg', 24)
 
 @description('Storage Account type')
 @allowed([

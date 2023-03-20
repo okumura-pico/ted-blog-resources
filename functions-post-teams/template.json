@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.15.31.15270",
-      "templateHash": "13289400106944518654"
+      "templateHash": "3874053902734725543"
     }
   },
   "parameters": {
@@ -25,7 +25,7 @@
     },
     "storageAccountName": {
       "type": "string",
-      "defaultValue": "[format('alert2teams{0}stg', uniqueString(resourceGroup().name))]",
+      "defaultValue": "[take(format('alert2teams{0}stg', uniqueString(resourceGroup().name)), 24)]",
       "metadata": {
         "description": "The name of Storage Account."
       }
