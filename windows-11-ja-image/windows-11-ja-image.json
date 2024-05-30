@@ -1,0 +1,203 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.27.1.19265",
+      "templateHash": "16317584705986007310"
+    }
+  },
+  "parameters": {
+    "prefix": {
+      "type": "string",
+      "defaultValue": "avd"
+    },
+    "postfix": {
+      "type": "string",
+      "defaultValue": "[uniqueString(resourceGroup().id)]"
+    },
+    "imagePublisher": {
+      "type": "string",
+      "defaultValue": "OurCompany"
+    },
+    "imageSku": {
+      "type": "string",
+      "defaultValue": "win11-23h2-avd-ja"
+    },
+    "sourceImagePublisher": {
+      "type": "string",
+      "defaultValue": "MicrosoftWindowsDesktop"
+    },
+    "sourceImageOffer": {
+      "type": "string",
+      "defaultValue": "windows-11"
+    },
+    "sourceImageSku": {
+      "type": "string",
+      "defaultValue": "win11-23h2-avd"
+    },
+    "sourceImageVersion": {
+      "type": "string",
+      "defaultValue": "latest"
+    }
+  },
+  "variables": {
+    "roleName": "[format('{0}-builder-role-{1}', parameters('prefix'), parameters('postfix'))]",
+    "identityName": "[format('{0}-builder-identity-{1}', parameters('prefix'), parameters('postfix'))]",
+    "galleryName": "[format('{0}_gallery_{1}', parameters('prefix'), parameters('postfix'))]",
+    "imageName": "Windows-11-ja",
+    "imageTemplateName": "[format('{0}-image-template-{1}', parameters('prefix'), parameters('postfix'))]",
+    "location": "[resourceGroup().location]",
+    "roleId": "[guid(variables('roleName'))]",
+    "runOutputName": "[format('{0}-output-{1}', parameters('prefix'), parameters('postfix'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Authorization/roleDefinitions",
+      "apiVersion": "2022-05-01-preview",
+      "name": "[variables('roleId')]",
+      "properties": {
+        "roleName": "[variables('roleName')]",
+        "description": "ImageBuilder実行者用カスタムロール",
+        "assignableScopes": [
+          "[resourceGroup().id]"
+        ],
+        "permissions": [
+          {
+            "actions": [
+              "Microsoft.Compute/galleries/read",
+              "Microsoft.Compute/galleries/images/read",
+              "Microsoft.Compute/galleries/images/versions/read",
+              "Microsoft.Compute/galleries/images/versions/write",
+              "Microsoft.Compute/images/write",
+              "Microsoft.Compute/images/read",
+              "Microsoft.Compute/images/delete"
+            ],
+            "notActions": [],
+            "dataActions": [],
+            "notDataActions": []
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2023-07-31-preview",
+      "name": "[variables('identityName')]",
+      "location": "[variables('location')]"
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(variables('identityName'), variables('roleName'))]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')), '2023-07-31-preview').principalId]",
+        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('roleId'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Authorization/roleDefinitions', variables('roleId'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/galleries",
+      "apiVersion": "2023-07-03",
+      "name": "[variables('galleryName')]",
+      "location": "[variables('location')]"
+    },
+    {
+      "type": "Microsoft.Compute/galleries/images",
+      "apiVersion": "2023-07-03",
+      "name": "[format('{0}/{1}', variables('galleryName'), variables('imageName'))]",
+      "location": "[variables('location')]",
+      "properties": {
+        "identifier": {
+          "offer": "Windows",
+          "publisher": "[parameters('imagePublisher')]",
+          "sku": "[parameters('imageSku')]"
+        },
+        "osState": "Generalized",
+        "osType": "Windows",
+        "hyperVGeneration": "V2",
+        "architecture": "x64"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/galleries', variables('galleryName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.VirtualMachineImages/imageTemplates",
+      "apiVersion": "2023-07-01",
+      "name": "[variables('imageTemplateName')]",
+      "location": "[variables('location')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')))]": {}
+        }
+      },
+      "properties": {
+        "distribute": [
+          {
+            "type": "SharedImage",
+            "galleryImageId": "[format('{0}/versions/1.0.0', resourceId('Microsoft.Compute/galleries/images', variables('galleryName'), variables('imageName')))]",
+            "runOutputName": "[variables('runOutputName')]",
+            "replicationRegions": [
+              "japaneast"
+            ],
+            "storageAccountType": "Standard_LRS",
+            "excludeFromLatest": true
+          }
+        ],
+        "source": {
+          "type": "PlatformImage",
+          "publisher": "[parameters('sourceImagePublisher')]",
+          "offer": "[parameters('sourceImageOffer')]",
+          "sku": "[parameters('sourceImageSku')]",
+          "version": "[parameters('sourceImageVersion')]"
+        },
+        "vmProfile": {
+          "vmSize": "Standard_B2ms",
+          "osDiskSizeGB": 127
+        },
+        "customize": [
+          {
+            "name": "Japanize",
+            "type": "PowerShell",
+            "runElevated": true,
+            "runAsSystem": true,
+            "inline": [
+              "Install-Language ja-JP -CopyToSettings",
+              "Set-SystemPreferredUILanguage ja-JP",
+              "Set-WinUILanguageOverride -Language ja-JP",
+              "Set-WinUserLanguageList -LanguageList ja-JP,en-US -Force",
+              "Set-WinHomeLocation -GeoId 0x7a",
+              "Set-TimeZone -id \"Tokyo Standard Time\"",
+              "Set-WinSystemLocale -SystemLocale ja-JP",
+              "Copy-UserInternationalSettingsToSystem -welcomescreen $true -newuser $true"
+            ]
+          },
+          {
+            "type": "WindowsRestart",
+            "restartCheckCommand": "write-host \"restarting post Teams Install\"",
+            "restartTimeout": "5m"
+          },
+          {
+            "type": "WindowsUpdate",
+            "searchCriteria": "IsInstalled=0",
+            "filters": [
+              "exclude:$_.Title -like '*Preview*'",
+              "include:$true"
+            ],
+            "updateLimit": 40
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/galleries/images', variables('galleryName'), variables('imageName'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]"
+      ]
+    }
+  ]
+}
