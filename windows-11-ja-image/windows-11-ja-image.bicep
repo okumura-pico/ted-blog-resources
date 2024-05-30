@@ -1,25 +1,29 @@
+@description('場所')
+param location string = resourceGroup().location
+@description('リソース名に前置する文字列')
 param prefix string = 'avd'
-param postfix string = uniqueString(resourceGroup().id)
+@description('リソース名に後置する文字列')
+param postfix string = uniqueString(resourceGroup().name)
+@description('作成イメージの発行者')
 param imagePublisher string = 'OurCompany'
+@description('作成イメージのSKU')
 param imageSku string = 'win11-23h2-avd-ja'
+@description('作成イメージの名前')
+param imageName string = 'Windows-11-ja'
 param sourceImagePublisher string = 'MicrosoftWindowsDesktop'
 param sourceImageOffer string = 'windows-11'
 param sourceImageSku string = 'win11-23h2-avd'
-// param sourceImageVersion string = '22631.3593.240511'
 param sourceImageVersion string = 'latest'
 
-var roleName = '${prefix}-builder-role-${postfix}'
-var identityName = '${prefix}-builder-identity-${postfix}'
+var roleName = '${prefix}-role-${postfix}'
+var identityName = '${prefix}-id-${postfix}'
 var galleryName = '${prefix}_gallery_${postfix}'
-var imageName = 'Windows-11-ja'
 var imageTemplateName = '${prefix}-image-template-${postfix}'
-var location = resourceGroup().location
-var roleId = guid(roleName)
 var runOutputName = '${prefix}-output-${postfix}'
 
 // Image builderを実行するManaged identity用ロール
 resource customRole 'Microsoft.Authorization/roleDefinitions@2022-05-01-preview' = {
-  name: roleId
+  name: guid(roleName)
   properties: {
     roleName: roleName
     description: 'ImageBuilder実行者用カスタムロール'
@@ -53,7 +57,7 @@ resource identity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-p
 
 // ロール割り当て
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(identityName, roleName)
+  name: guid(identity.name, customRole.id)
   properties: {
     principalId: identity.properties.principalId
     roleDefinitionId: customRole.id
@@ -117,6 +121,20 @@ resource imageTemplate 'Microsoft.VirtualMachineImages/imageTemplates@2023-07-01
       osDiskSizeGB: 127
     }
     customize: [
+      {
+        name: 'InstallFSLogix'
+        type: 'PowerShell'
+        runElevated: true
+        runAsSystem: true
+        inline: [
+          '$ProgressPreference = "SilentlyContinue"'
+          'New-Item -Path C:\\pkg -ItemType Directory'
+          'Write-Host "Try to download Fslogix package."'
+          'Invoke-WebRequest -Uri https://aka.ms/fslogix_download -OutFile c:\\pkg\\setup.zip'
+          'Expand-Archive -LiteralPath C:\\pkg\\setup.zip -DestinationPath c:\\pkg -Force'
+          'Start-Process -FilePath "c:\\pkg\\x64\\Release\\FSLogixAppsSetup.exe" -ArgumentList "/install /quiet" -Wait -Passthru -Verbose'
+        ]
+      }
       {
         name: 'Japanize'
         type: 'PowerShell'

@@ -5,25 +5,51 @@
     "_generator": {
       "name": "bicep",
       "version": "0.27.1.19265",
-      "templateHash": "16317584705986007310"
+      "templateHash": "539373177801680385"
     }
   },
   "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "場所"
+      }
+    },
     "prefix": {
       "type": "string",
-      "defaultValue": "avd"
+      "defaultValue": "avd",
+      "metadata": {
+        "description": "リソース名に前置する文字列"
+      }
     },
     "postfix": {
       "type": "string",
-      "defaultValue": "[uniqueString(resourceGroup().id)]"
+      "defaultValue": "[uniqueString(resourceGroup().name)]",
+      "metadata": {
+        "description": "リソース名に後置する文字列"
+      }
     },
     "imagePublisher": {
       "type": "string",
-      "defaultValue": "OurCompany"
+      "defaultValue": "OurCompany",
+      "metadata": {
+        "description": "作成イメージの発行者"
+      }
     },
     "imageSku": {
       "type": "string",
-      "defaultValue": "win11-23h2-avd-ja"
+      "defaultValue": "win11-23h2-avd-ja",
+      "metadata": {
+        "description": "作成イメージのSKU"
+      }
+    },
+    "imageName": {
+      "type": "string",
+      "defaultValue": "Windows-11-ja",
+      "metadata": {
+        "description": "作成イメージの名前"
+      }
     },
     "sourceImagePublisher": {
       "type": "string",
@@ -43,20 +69,17 @@
     }
   },
   "variables": {
-    "roleName": "[format('{0}-builder-role-{1}', parameters('prefix'), parameters('postfix'))]",
-    "identityName": "[format('{0}-builder-identity-{1}', parameters('prefix'), parameters('postfix'))]",
+    "roleName": "[format('{0}-role-{1}', parameters('prefix'), parameters('postfix'))]",
+    "identityName": "[format('{0}-id-{1}', parameters('prefix'), parameters('postfix'))]",
     "galleryName": "[format('{0}_gallery_{1}', parameters('prefix'), parameters('postfix'))]",
-    "imageName": "Windows-11-ja",
     "imageTemplateName": "[format('{0}-image-template-{1}', parameters('prefix'), parameters('postfix'))]",
-    "location": "[resourceGroup().location]",
-    "roleId": "[guid(variables('roleName'))]",
     "runOutputName": "[format('{0}-output-{1}', parameters('prefix'), parameters('postfix'))]"
   },
   "resources": [
     {
       "type": "Microsoft.Authorization/roleDefinitions",
       "apiVersion": "2022-05-01-preview",
-      "name": "[variables('roleId')]",
+      "name": "[guid(variables('roleName'))]",
       "properties": {
         "roleName": "[variables('roleName')]",
         "description": "ImageBuilder実行者用カスタムロール",
@@ -85,18 +108,18 @@
       "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
       "apiVersion": "2023-07-31-preview",
       "name": "[variables('identityName')]",
-      "location": "[variables('location')]"
+      "location": "[parameters('location')]"
     },
     {
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
-      "name": "[guid(variables('identityName'), variables('roleName'))]",
+      "name": "[guid(variables('identityName'), resourceId('Microsoft.Authorization/roleDefinitions', guid(variables('roleName'))))]",
       "properties": {
         "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')), '2023-07-31-preview').principalId]",
-        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('roleId'))]"
+        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', guid(variables('roleName')))]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Authorization/roleDefinitions', variables('roleId'))]",
+        "[resourceId('Microsoft.Authorization/roleDefinitions', guid(variables('roleName')))]",
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]"
       ]
     },
@@ -104,13 +127,13 @@
       "type": "Microsoft.Compute/galleries",
       "apiVersion": "2023-07-03",
       "name": "[variables('galleryName')]",
-      "location": "[variables('location')]"
+      "location": "[parameters('location')]"
     },
     {
       "type": "Microsoft.Compute/galleries/images",
       "apiVersion": "2023-07-03",
-      "name": "[format('{0}/{1}', variables('galleryName'), variables('imageName'))]",
-      "location": "[variables('location')]",
+      "name": "[format('{0}/{1}', variables('galleryName'), parameters('imageName'))]",
+      "location": "[parameters('location')]",
       "properties": {
         "identifier": {
           "offer": "Windows",
@@ -130,7 +153,7 @@
       "type": "Microsoft.VirtualMachineImages/imageTemplates",
       "apiVersion": "2023-07-01",
       "name": "[variables('imageTemplateName')]",
-      "location": "[variables('location')]",
+      "location": "[parameters('location')]",
       "identity": {
         "type": "UserAssigned",
         "userAssignedIdentities": {
@@ -141,7 +164,7 @@
         "distribute": [
           {
             "type": "SharedImage",
-            "galleryImageId": "[format('{0}/versions/1.0.0', resourceId('Microsoft.Compute/galleries/images', variables('galleryName'), variables('imageName')))]",
+            "galleryImageId": "[format('{0}/versions/1.0.0', resourceId('Microsoft.Compute/galleries/images', variables('galleryName'), parameters('imageName')))]",
             "runOutputName": "[variables('runOutputName')]",
             "replicationRegions": [
               "japaneast"
@@ -162,6 +185,20 @@
           "osDiskSizeGB": 127
         },
         "customize": [
+          {
+            "name": "InstallFSLogix",
+            "type": "PowerShell",
+            "runElevated": true,
+            "runAsSystem": true,
+            "inline": [
+              "$ProgressPreference = \"SilentlyContinue\"",
+              "New-Item -Path C:\\pkg -ItemType Directory",
+              "Write-Host \"Try to download Fslogix package.\"",
+              "Invoke-WebRequest -Uri https://aka.ms/fslogix_download -OutFile c:\\pkg\\setup.zip",
+              "Expand-Archive -LiteralPath C:\\pkg\\setup.zip -DestinationPath c:\\pkg -Force",
+              "Start-Process -FilePath \"c:\\pkg\\x64\\Release\\FSLogixAppsSetup.exe\" -ArgumentList \"/install /quiet\" -Wait -Passthru -Verbose"
+            ]
+          },
           {
             "name": "Japanize",
             "type": "PowerShell",
@@ -195,7 +232,7 @@
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/galleries/images', variables('galleryName'), variables('imageName'))]",
+        "[resourceId('Microsoft.Compute/galleries/images', variables('galleryName'), parameters('imageName'))]",
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]"
       ]
     }
