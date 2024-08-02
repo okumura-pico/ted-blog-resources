@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.27.1.19265",
-      "templateHash": "539373177801680385"
+      "version": "0.29.47.4906",
+      "templateHash": "15496279511202489909"
     }
   },
   "parameters": {
@@ -181,7 +181,7 @@
           "version": "[parameters('sourceImageVersion')]"
         },
         "vmProfile": {
-          "vmSize": "Standard_B2ms",
+          "vmSize": "Standard_D4ds_v5",
           "osDiskSizeGB": 127
         },
         "customize": [
@@ -217,16 +217,11 @@
           },
           {
             "type": "WindowsRestart",
-            "restartCheckCommand": "write-host \"restarting post Teams Install\"",
+            "restartCheckCommand": "Write-Host \"restarting post Japanize.\"",
             "restartTimeout": "5m"
           },
           {
             "type": "WindowsUpdate",
-            "searchCriteria": "IsInstalled=0",
-            "filters": [
-              "exclude:$_.Title -like '*Preview*'",
-              "include:$true"
-            ],
             "updateLimit": 40
           }
         ]

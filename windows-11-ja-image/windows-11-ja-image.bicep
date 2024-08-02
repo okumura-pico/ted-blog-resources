@@ -117,7 +117,7 @@ resource imageTemplate 'Microsoft.VirtualMachineImages/imageTemplates@2023-07-01
       version: sourceImageVersion
     }
     vmProfile: {
-      vmSize: 'Standard_B2ms'
+      vmSize: 'Standard_D4ds_v5'
       osDiskSizeGB: 127
     }
     customize: [
@@ -161,16 +161,12 @@ resource imageTemplate 'Microsoft.VirtualMachineImages/imageTemplates@2023-07-01
       }
       {
         type: 'WindowsRestart'
-        restartCheckCommand: 'write-host "restarting post Teams Install"'
+        restartCheckCommand: 'Write-Host "restarting post Japanize."'
         restartTimeout: '5m'
       }
       {
+        // see https://github.com/rgl/packer-plugin-windows-update
         type: 'WindowsUpdate'
-        searchCriteria: 'IsInstalled=0'
-        filters: [
-          'exclude:$_.Title -like \'*Preview*\''
-          'include:$true'
-        ]
         updateLimit: 40
       }
     ]
