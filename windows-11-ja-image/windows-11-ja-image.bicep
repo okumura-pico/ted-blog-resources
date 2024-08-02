@@ -164,11 +164,6 @@ resource imageTemplate 'Microsoft.VirtualMachineImages/imageTemplates@2023-07-01
         restartCheckCommand: 'Write-Host "restarting post Japanize."'
         restartTimeout: '5m'
       }
-      {
-        // see https://github.com/rgl/packer-plugin-windows-update
-        type: 'WindowsUpdate'
-        updateLimit: 40
-      }
     ]
   }
 }

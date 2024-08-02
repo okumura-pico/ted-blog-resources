@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.29.47.4906",
-      "templateHash": "15496279511202489909"
+      "templateHash": "8018852680110717459"
     }
   },
   "parameters": {
@@ -219,10 +219,6 @@
             "type": "WindowsRestart",
             "restartCheckCommand": "Write-Host \"restarting post Japanize.\"",
             "restartTimeout": "5m"
-          },
-          {
-            "type": "WindowsUpdate",
-            "updateLimit": 40
           }
         ]
       },
